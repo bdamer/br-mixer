@@ -3,92 +3,97 @@
 #include <string>
 #include <fstream>
 #include <vector>
+#include <stdint.h>
+
+#ifndef _MSC_VER
+#define _rotl(x,r) ((x << r) | (x >> (32 - r)))
+#endif
 
 #pragma pack(push, 1)
 struct MixHeader
 {
-	__int16 fileCount;		// number of file entries
-	__int32 size;			// byte length of data segment
+	int16_t fileCount;		// number of file entries
+	int32_t size;			// byte length of data segment
 };
 
 struct MixEntry
 {
-	unsigned __int32 id;	// id file name hash
-	__int32 offset;			// byte offset in data segment
-	__int32 size;			// byte length of data entry
+	uint32_t id;	// id file name hash
+	int32_t offset;			// byte offset in data segment
+	int32_t size;			// byte length of data entry
 };
 
 // Vector Quantized Animation
 struct VqaFile
 {
 	char form[4];			// F O R M
-	__int32 unknown1;
+	int32_t unknown1;
 	char wvqa[4];			// W V Q A signature
 };
 
 struct VqaHeader
 {
 	char vqhd[4];			// V Q H D chunk
-	__int16 version;
-	__int16 flags;
-	__int16 numFrames;
-	__int16 width;
-	__int16 height;
+	int16_t version;
+	int16_t flags;
+	int16_t numFrames;
+	int16_t width;
+	int16_t height;
 	// ...
 };
 
 struct ShpHeader
 {
-	__int16 imageCount;		// number of images
-	__int16 unknown1;
-	__int16 unknown2;
-	__int16 width;			// width of images
-	__int16 height;			// height of images
-	__int32 unknown3;		
+	int16_t imageCount;		// number of images
+	int16_t unknown1;
+	int16_t unknown2;
+	int16_t width;			// width of images
+	int16_t height;			// height of images
+	int32_t unknown3;		
 };
 
 struct ShpInfo
 {
-	__int8 offset[3];		// offset in file
-	__int8 format;			// image format (0x80, 0x40, etc)
-	__int16 refOffset;		// offset of reference image for format 20 / 40
-	__int16 refFormat;		// format of the reference image
+	int8_t offset[3];		// offset in file
+	int8_t format;			// image format (0x80, 0x40, etc)
+	int16_t refOffset;		// offset of reference image for format 20 / 40
+	int16_t refFormat;		// format of the reference image
 };
 
 struct DatHeader 
 {
 	//49 00 00 00		=	73
-	__int32 zero;			// 00 00 00 00		=	0
-	__int32 unknown1;		// 20 03 00 00		=	800
-	__int32 unknown2;		// 20 01 00 00		=	288
-	__int32 unknown3;		// 64 00 00 00		=	100
-	__int32 roomCount;		
-	__int32 unknown4;		// 4E 00 00 00		=	78
-	__int32 unknown5;		// 68 00 00 00		=	104
-	__int32 unknown6;		// 45 00 00 00		=	69
-	__int32 unknown7;		// C8 00 00 00		=	200
-	__int32 unknown8;		// 58 02 00 00		=	600
+	int32_t zero;			// 00 00 00 00		=	0
+	int32_t unknown1;		// 20 03 00 00		=	800
+	int32_t unknown2;		// 20 01 00 00		=	288
+	int32_t unknown3;		// 64 00 00 00		=	100
+	int32_t roomCount;		
+	int32_t unknown4;		// 4E 00 00 00		=	78
+	int32_t unknown5;		// 68 00 00 00		=	104
+	int32_t unknown6;		// 45 00 00 00		=	69
+	int32_t unknown7;		// C8 00 00 00		=	200
+	int32_t unknown8;		// 58 02 00 00		=	600
 	// Not clear yet what each of these represent - but the total
 	// makes up for the string entries in this file
-	__int32 animCount1;		
-	__int32 animCount2;		
-	__int32 movieCount;		// number of movie titles
+	int32_t animCount1;		
+	int32_t animCount2;		
+	int32_t movieCount;		// number of movie titles
 
-	__int32 unknown12;		// 09 00 00 00		=	9
-	__int32 unknown13;		// 0C 00 00 00		=	12
-	__int32 unknown14;		// 25 00 00 00		=	37
-	__int32 unknown15;		// 4D 00 00 00		=	77
+	int32_t unknown12;		// 09 00 00 00		=	9
+	int32_t unknown13;		// 0C 00 00 00		=	12
+	int32_t unknown14;		// 25 00 00 00		=	37
+	int32_t unknown15;		// 4D 00 00 00		=	77
 };
 
 struct UnknownHeader1
 {
-	__int32 count1;			// count of 20-byte segments following the header
+	int32_t count1;			// count of 20-byte segments following the header
 };
 
 struct SetHeader
 {
-	__int32 sixty;			// 0x3c = 60
-	__int32 count;			// not sure yet
+	int32_t sixty;			// 0x3c = 60
+	int32_t count;			// not sure yet
 };
 
 struct SetItem
@@ -130,5 +135,5 @@ public:
 	void listFiles(void);
 	void loadByName(const std::string& name);
 	void loadByIndex(int idx);
-	void loadById(unsigned int id);
+	void loadById(uint32_t id);
 };

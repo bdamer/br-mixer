@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <string>
 #include <array>
+#include <stdexcept>
 
 MixFile::MixFile(const std::string& filename)
 {
@@ -72,7 +73,7 @@ void MixFile::loadByName(const std::string& name)
 	std::transform(name.begin(), name.end(), buffer.begin(), toupper);
 
 	// process characters in groups of 4 bytes
-	unsigned __int32 res = 0;
+	uint32_t res = 0;
 	for (int i = 0; i < size; i += 4)
 	{
 		res = _rotl(res, 1); // rotate left by 1
@@ -82,10 +83,10 @@ void MixFile::loadByName(const std::string& name)
 	loadById(res);
 }
 
-void MixFile::loadById(unsigned int id)
+void MixFile::loadById(uint32_t id)
 {
 	// TODO: IDs are stored in increasing order -> perform binary search
-	for (auto i = 0; i < entries.size(); i++)
+	for (auto i = 0; i < (int)entries.size(); i++)
 	{
 		if (entries[i].id == id)
 		{
@@ -164,17 +165,17 @@ void MixFile::loadByIndex(int idx)
 	case STR:
 		{
 			std::cout << "Loading String Resource file." << std::endl;
-			__int32 count = tmp[0] | (tmp[1]<<8) | (tmp[2]<<16) | (tmp[3]<<24);
+			int32_t count = tmp[0] | (tmp[1]<<8) | (tmp[2]<<16) | (tmp[3]<<24);
 
 			// ordering of offsets? so far these always appear to be 0, 1, 2, ... count
-			std::vector<__int32> indexes;
+			std::vector<int32_t> indexes;
 			indexes.resize(count);
-			in.read((char*)&indexes[0], count * sizeof(__int32));
+			in.read((char*)&indexes[0], count * sizeof(int32_t));
 
 			// offsets starting after <count>
-			std::vector<__int32> offsets;
+			std::vector<int32_t> offsets;
 			offsets.resize(count);
-			in.read((char*)&offsets[0], count * sizeof(__int32));
+			in.read((char*)&offsets[0], count * sizeof(int32_t));
 
 			std::vector<char> buffer;
 			for (int i = 0; i < count; i++)
