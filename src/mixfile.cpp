@@ -1,10 +1,14 @@
 #include "mixfile.h"
+#include "shpfile.h"
+
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
 #include <string>
 #include <array>
 #include <stdexcept>
+
+std::map<uint32_t,std::string> MixFile::KNOWN_IDS;
 
 MixFile::MixFile(const std::string& filename)
 {
@@ -23,6 +27,30 @@ MixFile::~MixFile(void)
 	if (in)
 	{
 		in.close();
+	}
+}
+
+void MixFile::loadKnownIds(const std::string& filename)
+{
+	std::ifstream file(filename);
+	if (!file)
+	{
+		std::cerr << "Could not open file." << std::endl;
+		throw std::runtime_error("Error opening file.");
+	}
+
+	for (std::string line; std::getline(file, line); )
+	{
+		int idx = line.find('#');
+		if (idx == 0)
+			continue;
+		idx = line.find('=');
+		if (idx > -1)
+		{
+			auto id = std::stoul(line.substr(0, idx), 0, 16);
+			auto name = line.substr(idx + 1);
+			KNOWN_IDS[id] = name;
+		}
 	}
 }
 
@@ -46,7 +74,7 @@ int MixFile::moveToFile(int idx)
 void MixFile::listFiles(void)
 {
 	char tmp[4];
-	std::cout << "Entry\tID      \tOffset  \tSize    \tType" << std::endl;
+	std::cout << "Entry\tID      \tName    \tOffset  \tSize    \tType" << std::endl;
 	for (int i = 0; i < header.fileCount; i++)
 	{
 		// Attempt to detect type
@@ -54,9 +82,16 @@ void MixFile::listFiles(void)
 		in.read(tmp, 4);
 		auto t = detectFileType(tmp);
 
+		std::string name = "UNKNOWN";
+		if (KNOWN_IDS.count(entries[i].id) > 0)
+		{
+			name = KNOWN_IDS[entries[i].id];
+		}
+
 		std::cout << std::setw(5) << i << "\t" 
 			<< std::hex << std::setw(8) << entries[i].id << "\t"
-			<< std::dec << std::setw(8) << entries[i].offset << "\t"
+			<< std::setw(8) << name << "\t"
+			<< std::dec << std::setw(8) << (dataOffset + entries[i].offset) << "\t"
 			<< std::dec << std::setw(8) << entries[i].size << "\t"
 			<< std::setw(4) << t << std::endl;
 	}
@@ -162,7 +197,7 @@ void MixFile::loadByIndex(int idx)
 		}
 		break;
 
-	case STR:
+	case STR: // TRE?
 		{
 			std::cout << "Loading String Resource file." << std::endl;
 			int32_t count = tmp[0] | (tmp[1]<<8) | (tmp[2]<<16) | (tmp[3]<<24);
@@ -194,11 +229,22 @@ void MixFile::loadByIndex(int idx)
 
 	case UNKNOWN:
 	default:
-		std::cout << "Unknown file format: " << std::hex 
-			<< (int)tmp[0] << " "
-			<< (int)tmp[1] << " "
-			<< (int)tmp[2] << " "
-			<< (int)tmp[3] << std::dec << std::endl;
+		{
+			char choice;
+			std::cout << "Unknown file format: " << std::hex 
+				<< (int)tmp[0] << " "
+				<< (int)tmp[1] << " "
+				<< (int)tmp[2] << " "
+				<< (int)tmp[3] << std::dec << std::endl;
+			std::cout << "Press [s] to attempt to load file as SHP, or press any other key to return...";
+			std::cin >> choice;
+
+			if (choice == 's')
+			{
+				in.seekg(offset);
+				ShpFile shp(in);
+			}
+		}		
 		break;
 	}
 }

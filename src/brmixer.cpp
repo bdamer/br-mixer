@@ -9,8 +9,9 @@ int main(int argc, char** argv)
 		return 1;
 	}
 
-	MixFile file(argv[1]);
+	MixFile::loadKnownIds("../data/id.txt");
 
+	MixFile file(argv[1]);
 	std::string input;
 	while (true)
 	{

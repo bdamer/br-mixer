@@ -4,6 +4,7 @@
 #include <fstream>
 #include <vector>
 #include <stdint.h>
+#include <map>
 
 #ifndef _MSC_VER
 #define _rotl(x,r) ((x << r) | (x >> (32 - r)))
@@ -40,24 +41,6 @@ struct VqaHeader
 	int16_t width;
 	int16_t height;
 	// ...
-};
-
-struct ShpHeader
-{
-	int16_t imageCount;		// number of images
-	int16_t unknown1;
-	int16_t unknown2;
-	int16_t width;			// width of images
-	int16_t height;			// height of images
-	int32_t unknown3;		
-};
-
-struct ShpInfo
-{
-	int8_t offset[3];		// offset in file
-	int8_t format;			// image format (0x80, 0x40, etc)
-	int16_t refOffset;		// offset of reference image for format 20 / 40
-	int16_t refFormat;		// format of the reference image
 };
 
 struct DatHeader 
@@ -109,12 +92,15 @@ enum FileType
 	VQA,
 	SET,
 	DAT,
-	STR
+	STR,
+	SHP
 };
 
 class MixFile
 {
 private:
+	static std::map<uint32_t,std::string> KNOWN_IDS;	
+
 	std::ifstream in;
 	MixHeader header;
 	std::vector<MixEntry> entries;
@@ -129,6 +115,8 @@ private:
 	FileType detectFileType(char* data) const;
 
 public:
+	static void loadKnownIds(const std::string& filename);
+
 	MixFile(const std::string& filename);
 	~MixFile(void);
 
