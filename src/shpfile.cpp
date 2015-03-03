@@ -2,7 +2,7 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
-#include <png.hpp>
+#include <png++/png.hpp>
 
 ShpFile::ShpFile(std::ifstream& in)
 {

@@ -3,7 +3,7 @@
 #include <fstream>
 #include <stdint.h>
 #include <string>
-#include <png.hpp>
+#include <png++/png.hpp>
 
 #pragma pack(push, 1)
 struct ShpHeader
