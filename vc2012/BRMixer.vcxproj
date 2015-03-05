@@ -72,12 +72,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\datfile.cpp" />
     <ClCompile Include="..\src\mixfile.cpp" />
     <ClCompile Include="..\src\brmixer.cpp" />
     <ClCompile Include="..\src\shpfile.cpp" />
     <ClCompile Include="..\src\vqafile.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\src\datfile.h" />
     <ClInclude Include="..\src\mixfile.h" />
     <ClInclude Include="..\src\shpfile.h" />
     <ClInclude Include="..\src\vqafile.h" />

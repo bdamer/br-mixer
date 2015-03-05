@@ -24,24 +24,25 @@ struct MixEntry
 	int32_t size;			// byte length of data entry
 };
 
-struct DatHeader 
+struct GameInfo 
 {
-	//49 00 00 00		=	73
+	int32_t offset;			// Start of data + 1
 	int32_t zero;			// 00 00 00 00		=	0
 	int32_t unknown1;		// 20 03 00 00		=	800
 	int32_t unknown2;		// 20 01 00 00		=	288
 	int32_t unknown3;		// 64 00 00 00		=	100
-	int32_t roomCount;		
+
+	int32_t setCount;		// number of sets
+
 	int32_t unknown4;		// 4E 00 00 00		=	78
 	int32_t unknown5;		// 68 00 00 00		=	104
 	int32_t unknown6;		// 45 00 00 00		=	69
 	int32_t unknown7;		// C8 00 00 00		=	200
 	int32_t unknown8;		// 58 02 00 00		=	600
-	// Not clear yet what each of these represent - but the total
-	// makes up for the string entries in this file
-	int32_t animCount1;		
-	int32_t animCount2;		
-	int32_t movieCount;		// number of movie titles
+
+	int32_t audCount;		// number of audio files
+	int32_t musCount;		// number of music files
+	int32_t vqaCount;		// number of movies
 
 	int32_t unknown12;		// 09 00 00 00		=	9
 	int32_t unknown13;		// 0C 00 00 00		=	12
@@ -73,7 +74,8 @@ enum FileType
 	VQA,
 	SET,
 	DAT,
-	STR,
+	GAMEINFO,
+	STR,	
 	SHP
 };
 
@@ -81,6 +83,10 @@ class MixFile
 {
 private:
 	static std::map<uint32_t,std::string> KNOWN_IDS;	
+	static const uint32_t VQA_ID = 0x4d524f46;
+	static const uint32_t SET_ID = 0x30746553;	
+	static const uint32_t GAMEINFO_ID = 0x00000049;
+	static const uint32_t DAT_ID = 0x3457b6f6;
 
 	std::ifstream in;
 	MixHeader header;
@@ -93,7 +99,9 @@ private:
 	// Positions stream pointer at start of file and returns the offset.
 	int moveToFile(int idx);
 	// Attempts to detect file type based by reading data from file.
-	FileType detectFileType(char* data) const;
+	FileType detectFileType(void);
+
+	uint32_t computeHash(const std::string& s) const;
 
 public:
 	static void loadKnownIds(const std::string& filename);

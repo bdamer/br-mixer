@@ -1,6 +1,7 @@
 #include "mixfile.h"
 #include "shpfile.h"
 #include "vqafile.h"
+#include "datfile.h"
 
 #include <iostream>
 #include <sstream>
@@ -75,14 +76,12 @@ int MixFile::moveToFile(int idx)
 
 void MixFile::listFiles(void)
 {
-	char tmp[4];
 	std::cout << "Entry\tID      \tName    \tOffset  \tSize    \tType" << std::endl;
 	for (int i = 0; i < header.fileCount; i++)
 	{
 		// Attempt to detect type
 		moveToFile(i);
-		in.read(tmp, 4);
-		auto t = detectFileType(tmp);
+		auto t = detectFileType();
 
 		std::string name = "UNKNOWN";
 		if (KNOWN_IDS.count(entries[i].id) > 0)
@@ -99,15 +98,15 @@ void MixFile::listFiles(void)
 	}
 }
 
-void MixFile::loadByName(const std::string& name)
+// Computes a simple file hash. The hash is case-insensitive and works for 
+// ASCII characters only.
+uint32_t MixFile::computeHash(const std::string& s) const
 {
-	// Computes a simple file hash. The hash is case-insensitive and works for 
-	// ASCII characters only.
 
 	// pad size to multiple of 4
-	int size = (name.length() + 3) & ~0x03;
+	int size = (s.length() + 3) & ~0x03;
 	std::vector<unsigned char> buffer(size);
-	std::transform(name.begin(), name.end(), buffer.begin(), toupper);
+	std::transform(s.begin(), s.end(), buffer.begin(), toupper);
 
 	// process characters in groups of 4 bytes
 	uint32_t res = 0;
@@ -116,8 +115,12 @@ void MixFile::loadByName(const std::string& name)
 		res = _rotl(res, 1); // rotate left by 1
 		res += (buffer[i+3] << 24) + (buffer[i+2] << 16) + (buffer[i+1] << 8) + buffer[i]; // accumulate
 	}
+	return res;
+}
 
-	loadById(res);
+void MixFile::loadByName(const std::string& name)
+{
+	loadById(computeHash(name));
 }
 
 void MixFile::loadById(uint32_t id)
@@ -134,22 +137,30 @@ void MixFile::loadById(uint32_t id)
 	std::cerr << "Could not find entry for id: 0x" << std::hex << id << std::dec << std::endl;
 }
 
-FileType MixFile::detectFileType(char* data) const
+FileType MixFile::detectFileType(void)
 {
-	if (data[0] == 'F' && data[1] == 'O' && data[2] == 'R' && data[3] == 'M')
+	uint32_t tmp;
+	in.read((char*)&tmp, sizeof(uint32_t));
+
+	if ((tmp & VQA_ID) == VQA_ID)
 	{
 		return FileType::VQA;
-	}
-	else if (data[0] == 'S' && data[1] == 'e' && data[2] == 't' && data[3] == '0')
+	}	
+	else if ((tmp & SET_ID) == SET_ID)		
 	{
 		return FileType::SET;
 	}
-	else if (data[0] == 0x49)
+	else if ((tmp & GAMEINFO_ID) == GAMEINFO_ID)
+	{
+		return FileType::GAMEINFO;
+	}
+	else if ((tmp & DAT_ID) == DAT_ID)
 	{
 		return FileType::DAT;
 	}
 	else
 	{
+//		std::cout << "Unknown file format: " << std::hex << tmp << std::dec << std::endl;
 		return FileType::UNKNOWN;
 	}
 }
@@ -157,13 +168,8 @@ FileType MixFile::detectFileType(char* data) const
 void MixFile::loadByIndex(int idx)
 {
 	int offset = moveToFile(idx);
-
 	// Autodetect file type
-	char tmp[4];
-	in.read(tmp, 4);
-	auto t = detectFileType(tmp);
-
-	switch (t)
+	switch (detectFileType())
 	{
 	case VQA:
 		{
@@ -187,49 +193,58 @@ void MixFile::loadByIndex(int idx)
 		}
 		break;
 
-	case DAT:
+	case GAMEINFO:
 		{
-			std::cout << "Loading Data file." << std::endl;
-			DatHeader rh;
-			in.read((char*)&rh, sizeof(rh));
+			std::cout << "Loading GAMEINFO file." << std::endl;
+			in.seekg(offset);
+			GameInfo info;
+			in.read((char*)&info, sizeof(info));
 
-			// header is 72 bytes
-			int pos = 72;	
-			// 4-character 0-terminated strings
-			pos += rh.roomCount * 5; 		
-			// 8-character strings 0-terminated strings
-			pos += (rh.animCount1 + rh.animCount2 + rh.movieCount) * 9;
-			in.seekg(offset + pos);
+			std::cout << std::endl << "Listing sets: " << std::endl;
+			char name[9];
+			for (int i = 0; i < info.setCount; i++)
+			{
+				in.read(name, 5 * sizeof(char));
+				std::cout << name << std::endl;
+			}
+
+			std::cout << std::endl << "Listing audio files: " << std::endl;
+			for (int i = 0; i < info.audCount; i++)
+			{
+				in.read(name, 9 * sizeof(char));
+				std::cout << name << std::endl;
+			}
+
+			std::cout << std::endl << "Listing music files: " << std::endl;
+			for (int i = 0; i < info.musCount; i++)
+			{
+				in.read(name, 9 * sizeof(char));
+				std::cout << name << std::endl;
+			}
+
+			std::cout << std::endl << "Listing movies: " << std::endl;
+			for (int i = 0; i < info.vqaCount; i++)
+			{
+				in.read(name, 9 * sizeof(char));
+				std::cout << name << std::endl;
+			}
 		}
 		break;
 
+	case DAT:
+		{
+			// Doesn't work for GAMEINFO.DAT or INDEX.DAT
+			std::cout << "Loading DAT file." << std::endl;
+			DatFile dat(in, entries[idx].size);
+		}
+		break;
+
+	// this is basically the same as a dat missing the ID bytes
 	case STR: // TRE?
 		{
 			std::cout << "Loading String Resource file." << std::endl;
-			int32_t count = tmp[0] | (tmp[1]<<8) | (tmp[2]<<16) | (tmp[3]<<24);
-
-			// ordering of offsets? so far these always appear to be 0, 1, 2, ... count
-			std::vector<int32_t> indexes;
-			indexes.resize(count);
-			in.read((char*)&indexes[0], count * sizeof(int32_t));
-
-			// offsets starting after <count>
-			std::vector<int32_t> offsets;
-			offsets.resize(count);
-			in.read((char*)&offsets[0], count * sizeof(int32_t));
-
-			std::vector<char> buffer;
-			for (int i = 0; i < count; i++)
-			{
-				// offsets do not include <count>
-				int start = offsets[i] + 4; 
-				int stop = (i + 1 < count) ? offsets[i + 1] + 4 : entries[idx].size; 
-				buffer.resize(stop - start);
-				in.seekg(offset + start);
-				in.read(&buffer[0], buffer.size());
-				std::string str(buffer.begin(), buffer.end());
-				std::cout << "String " << i << " = " << str << std::endl;
-			}
+			in.seekg(offset);
+			DatFile dat(in, entries[idx].size);
 		}
 		break;
 
@@ -237,11 +252,6 @@ void MixFile::loadByIndex(int idx)
 	default:
 		{
 			char choice;
-			std::cout << "Unknown file format: " << std::hex 
-				<< (int)tmp[0] << " "
-				<< (int)tmp[1] << " "
-				<< (int)tmp[2] << " "
-				<< (int)tmp[3] << std::dec << std::endl;
 			std::cout << "Press [s] to attempt to load file as SHP, or press any other key to return...";
 			std::cin >> choice;
 
