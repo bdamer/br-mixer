@@ -1,6 +1,5 @@
 #include "shpfile.h"
 #include <iostream>
-#include <sstream>
 #include <vector>
 #include <png++/png.hpp>
 

@@ -1,7 +1,9 @@
 #include "mixfile.h"
 #include "shpfile.h"
+#include "vqafile.h"
 
 #include <iostream>
+#include <sstream>
 #include <iomanip>
 #include <algorithm>
 #include <string>
@@ -164,7 +166,11 @@ void MixFile::loadByIndex(int idx)
 	switch (t)
 	{
 	case VQA:
-		std::cout << "Loading VQA file." << std::endl;
+		{
+			std::cout << "Loading VQA file." << std::endl;
+			in.seekg(offset);
+			VqaFile vqa(in);
+		}
 		break;
 
 	case SET:
@@ -243,6 +249,17 @@ void MixFile::loadByIndex(int idx)
 			{
 				in.seekg(offset);
 				ShpFile shp(in);
+				std::cout << "Save to disk? (y/n)";
+				std::cin >> choice;
+				if (choice == 'y')
+				{
+					for (int i = 0; i < shp.count(); i++)
+					{
+						std::ostringstream ss;
+						ss << "C:\\" << "sprite-" << idx << "." << i << ".png";
+						shp.saveAsPng(i, ss.str());
+					}
+				}
 			}
 		}		
 		break;

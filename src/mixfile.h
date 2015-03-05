@@ -24,25 +24,6 @@ struct MixEntry
 	int32_t size;			// byte length of data entry
 };
 
-// Vector Quantized Animation
-struct VqaFile
-{
-	char form[4];			// F O R M
-	int32_t unknown1;
-	char wvqa[4];			// W V Q A signature
-};
-
-struct VqaHeader
-{
-	char vqhd[4];			// V Q H D chunk
-	int16_t version;
-	int16_t flags;
-	int16_t numFrames;
-	int16_t width;
-	int16_t height;
-	// ...
-};
-
 struct DatHeader 
 {
 	//49 00 00 00		=	73
