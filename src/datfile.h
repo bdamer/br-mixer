@@ -19,5 +19,4 @@ public:
 
 	int32_t count(void) const { return numEntries; }
 	std::string loadStringEntry(int i);
-	
 };

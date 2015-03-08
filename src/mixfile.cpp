@@ -102,7 +102,6 @@ void MixFile::listFiles(void)
 // ASCII characters only.
 uint32_t MixFile::computeHash(const std::string& s) const
 {
-
 	// pad size to multiple of 4
 	int size = (s.length() + 3) & ~0x03;
 	std::vector<unsigned char> buffer(size);
@@ -186,7 +185,12 @@ void MixFile::loadByIndex(int idx)
 			in.read((char*)&sh, sizeof(sh));
 			std::vector<SetItem> items;
 			items.resize(sh.count);
-			in.read((char*)&items[0], sh.count * sizeof(SetItem));		
+			in.read((char*)&items[0], sh.count * sizeof(SetItem));
+			for (auto i : items)
+			{
+				std::cout << i.name << std::endl;
+			}
+
 			// then, read count2
 			// count2 * 60 (I think)
 			// not clear what comes after that...
@@ -200,34 +204,46 @@ void MixFile::loadByIndex(int idx)
 			GameInfo info;
 			in.read((char*)&info, sizeof(info));
 
-			std::cout << std::endl << "Listing sets: " << std::endl;
+			std::ostringstream ss;
+
+			std::cout << std::endl << "Listing sets: " << std::hex << std::endl;
 			char name[9];
 			for (int i = 0; i < info.setCount; i++)
 			{
+				ss.str("");
 				in.read(name, 5 * sizeof(char));
-				std::cout << name << std::endl;
+				ss << name << "-MIN.SET";
+				std::cout << computeHash(ss.str()) << "=" << ss.str() << std::endl;
 			}
 
 			std::cout << std::endl << "Listing audio files: " << std::endl;
 			for (int i = 0; i < info.audCount; i++)
 			{
+				ss.str("");
 				in.read(name, 9 * sizeof(char));
-				std::cout << name << std::endl;
+				ss << name << ".AUD";
+				std::cout << computeHash(ss.str()) << "=" << ss.str() << std::endl;
 			}
 
 			std::cout << std::endl << "Listing music files: " << std::endl;
 			for (int i = 0; i < info.musCount; i++)
 			{
+				ss.str("");
 				in.read(name, 9 * sizeof(char));
-				std::cout << name << std::endl;
+				ss << name << ".AUD";
+				std::cout << computeHash(ss.str()) << "=" << ss.str() << std::endl;
 			}
 
 			std::cout << std::endl << "Listing movies: " << std::endl;
 			for (int i = 0; i < info.vqaCount; i++)
 			{
+				ss.str("");
 				in.read(name, 9 * sizeof(char));
-				std::cout << name << std::endl;
+				ss << name << ".VQA";
+				std::cout << computeHash(ss.str()) << "=" << ss.str() << std::endl;
 			}
+
+			std::cout << std::dec;
 		}
 		break;
 
@@ -240,9 +256,9 @@ void MixFile::loadByIndex(int idx)
 		break;
 
 	// this is basically the same as a dat missing the ID bytes
-	case STR: // TRE?
+	case TRE:
 		{
-			std::cout << "Loading String Resource file." << std::endl;
+			std::cout << "Loading TRE file." << std::endl;
 			in.seekg(offset);
 			DatFile dat(in, entries[idx].size);
 		}

@@ -71,12 +71,12 @@ struct SetItem
 enum FileType
 {
 	UNKNOWN,
-	VQA,
+	VQA,	
+	SHP,
 	SET,
 	DAT,
 	GAMEINFO,
-	STR,	
-	SHP
+	TRE
 };
 
 class MixFile
