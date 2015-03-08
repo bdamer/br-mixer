@@ -126,9 +126,9 @@ void VqaFile::readCodebook()
 	// screen block data -> array of blockW * blockH
 	// read size
 	uint8_t tmp[4];
-	uint32_t size;
+	//uint32_t size;
 	in.read((char*)tmp, sizeof(uint32_t));
-	size = b2l(tmp);
+	//size = b2l(tmp);
 
 	uint8_t format;
 	in.read((char*)&format, sizeof(uint8_t));
