@@ -4,32 +4,22 @@
 
 DatFile::DatFile(std::ifstream& in, int32_t length) : in(in), length(length)
 {
-	in.read((char*)&numEntries, sizeof(int32_t));
-	std::cout << "DAT file contains " << numEntries << " entries." << std::endl;
+	in.read((char*)&pageSize, sizeof(int32_t));
+	in.read((char*)&pageCount, sizeof(int32_t));
+	in.read((char*)&paletteCount, sizeof(int32_t));
 
-	// ordering of offsets? so far these always appear to be 0, 1, 2, ... count
-	indexes.resize(numEntries);
-	in.read((char*)&indexes[0], numEntries * sizeof(int32_t));
+	std::cout << "DAT file contains " << pageSize << " pages." << std::endl;
 
-	// offsets starting after <count>
-	std::vector<int32_t> offsets;
-	offsets.resize(numEntries);
-	in.read((char*)&offsets[0], numEntries * sizeof(int32_t));
+	std::cout << "DAT file contains " << paletteCount << " color palettes." << std::endl;
+	int skip = paletteCount * 256 * 3; // each palette contains 256 RGB entries
+	in.seekg(skip, std::ios_base::cur);
+
+	in.read((char*)&animationCount, sizeof(int32_t));
+	std::cout << "DAT file contains " << animationCount << " animations." << std::endl;
+
+	skip = animationCount * 8 * 4; // each animation consists of 8 * 4 byte attributes
 }
 
 DatFile::~DatFile(void)
 {
-}
-
-std::string DatFile::loadStringEntry(int i)
-{
-	std::vector<char> buffer;
-	// offsets do not include <count>
-	int start = offsets[i] + 4; 
-	int stop = (i + 1 < numEntries) ? offsets[i + 1] + 4 : length; 
-	buffer.resize(stop - start);
-	in.seekg(numEntries + start);
-	in.read(&buffer[0], buffer.size());
-	std::string str(buffer.begin(), buffer.end());
-	return str;
 }

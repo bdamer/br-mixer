@@ -86,7 +86,7 @@ private:
 	static const uint32_t VQA_ID = 0x4d524f46;
 	static const uint32_t SET_ID = 0x30746553;	
 	static const uint32_t GAMEINFO_ID = 0x00000049;
-	static const uint32_t DAT_ID = 0x3457b6f6;
+	static const uint32_t DAT_ID = 0x3457b6f6; // timestamp 10/29/1997 @ 10:21pm (UTC)
 
 	std::ifstream in;
 	MixHeader header;

@@ -9,8 +9,8 @@ all: $(TARGET)
 clean:
 	rm -f *.o brmixer
 
-$(TARGET): brmixer.o mixfile.o shpfile.o datfile.o vqafile.o
-	$(CC) $(CFLAGS) -o $(TARGET) brmixer.o mixfile.o shpfile.o datfile.o vqafile.o $(LDFLAGS)
+$(TARGET): brmixer.o mixfile.o shpfile.o datfile.o trefile.o vqafile.o
+	$(CC) $(CFLAGS) -o $(TARGET) brmixer.o mixfile.o shpfile.o datfile.o trefile.o vqafile.o $(LDFLAGS)
 
 brmixer.o: $(SRC)brmixer.cpp
 	$(CC) $(CFLAGS) -c $(SRC)brmixer.cpp
@@ -24,6 +24,9 @@ shpfile.o: $(SRC)shpfile.cpp
 datfile.o: $(SRC)datfile.cpp
 	$(CC) $(CFLAGS) -c $(SRC)datfile.cpp
 
+trefile.o: $(SRC)trefile.cpp
+	$(CC) $(CFLAGS) -c $(SRC)trefile.cpp
+	
 vqafile.o: $(SRC)vqafile.cpp
 	$(CC) $(CFLAGS) -c $(SRC)vqafile.cpp
 

@@ -2,6 +2,7 @@
 #include "shpfile.h"
 #include "vqafile.h"
 #include "datfile.h"
+#include "trefile.h"
 
 #include <iostream>
 #include <sstream>
@@ -255,12 +256,11 @@ void MixFile::loadByIndex(int idx)
 		}
 		break;
 
-	// this is basically the same as a dat missing the ID bytes
 	case TRE:
 		{
 			std::cout << "Loading TRE file." << std::endl;
 			in.seekg(offset);
-			DatFile dat(in, entries[idx].size);
+			TreFile dat(in, entries[idx].size);
 		}
 		break;
 
