@@ -1,22 +1,22 @@
 #pragma once
 
 #include <stdint.h>
-#include <fstream>
+#include <istream>
 #include <vector>
 
 class TreFile
 {
 private:
-	std::ifstream& in;
-	int32_t numEntries;
+	std::size_t numEntries;
 	int32_t length; // length of the dat file
-	std::vector<int32_t> indexes;
-	std::vector<int32_t> offsets;	
+	std::vector<std::string> strings;
 
 public:
-	TreFile(std::ifstream& in, int32_t length);
-	~TreFile(void);
+	TreFile(int32_t length) : length(length) { }
+	~TreFile(void) { }
 
-	int32_t count(void) const { return numEntries; }
-	std::string loadStringEntry(int i);
+	std::size_t size(void) const { return numEntries; }
+	std::string getString(int idx) const { return strings[idx]; }
+
+	friend std::istream& operator>>(std::istream& is, TreFile& file);
 };

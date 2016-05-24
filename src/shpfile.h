@@ -1,6 +1,6 @@
 #pragma once
 
-#include <fstream>
+#include <istream>
 #include <stdint.h>
 #include <string>
 #include <png++/png.hpp>
@@ -21,10 +21,12 @@ private:
 	std::vector<png::image<png::rgb_pixel>> images;
 
 public:
-	ShpFile(std::ifstream& in);
-	~ShpFile(void);
+	ShpFile(void) { }
+	~ShpFile(void) { }
 
 	// Saves the image at the specified index from this SHP to a file.
 	void saveAsPng(int idx, const std::string& filename);
 	int32_t count() const { return numImages; }
+
+	friend std::istream& operator>>(std::istream& is, ShpFile& file);
 };

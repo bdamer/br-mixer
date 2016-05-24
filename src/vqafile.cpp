@@ -10,131 +10,51 @@ uint32_t b2l(uint8_t* b)
 	return ((int)b[0] << 24) + ((int)b[1] << 16) + ((int)b[2] << 8) + b[3];
 }
 
-VqaFile::VqaFile(std::istream& in) : in(in)
-{
-	readHeader();
-	std::cout << "Found VQA with " << header.numFrames << " frames of size " 
-		<< header.width << " by " << header.height << std::endl;
-	return; // giving up on this format for now...
-
-	while (true)
-	{
-		uint32_t id;
-		uint32_t size;
-		uint8_t tmp[4];
-		in.read((char*)&id, sizeof(uint32_t));
-
-		std::cout << std::hex << id << std::endl;
-
-		switch (id)
-		{
-		case LINF:
-			// followed by 4 bytes
-			in.seekg(4, std::ios_base::cur);
-			break;
-		case LINH:
-			// followed by 10 bytes
-			in.seekg(10, std::ios_base::cur);
-			break;
-		case LIND:
-			// followed by 8 bytes
-			in.seekg(8, std::ios_base::cur);
-			break;
-		case CINF:
-			// followed by 4 bytes
-			in.seekg(4, std::ios_base::cur);
-			break;
-		case CINH:
-			// followed by 12 bytes
-			in.seekg(12, std::ios_base::cur);
-			break;
-		case CIND:
-			// followed by 10 bytes
-			in.seekg(10, std::ios_base::cur);			
-			break;
-		case FINF: // Frame Information - offset into each frame
-			in.seekg(4, std::ios_base::cur); // not clear what this is...
-			in.seekg(header.numFrames * sizeof(uint32_t), std::ios_base::cur); // offsets need to multipled by 2
-			break;
-		case SN2J:
-			in.read((char*)tmp, sizeof(uint32_t));
-			size = b2l(tmp);
-			in.seekg(size, std::ios_base::cur);
-			break;
-		case SND2:
-			in.read((char*)tmp, sizeof(uint32_t));
-			size = b2l(tmp);
-			// TODO: why is there an extra byte here?
-			in.seekg(size + 1, std::ios_base::cur);
-			break;
-
-		// Vector Quantized Frame
-		case VQFR:
-			in.read((char*)tmp, sizeof(uint32_t));
-			size = b2l(tmp);
-			// followed by chunks
-			break;
-
-		// Code book, full, compressed 
-		case CBFZ:
-			readCodebook();
-			break;
-
-		default:
-			break;
-		}
-	}
-}
-
-VqaFile::~VqaFile(void)
-{
-}
-
-void VqaFile::readHeader()
+void VqaFile::readHeader(std::istream& is)
 {
 	uint32_t id;
 	uint32_t size;
-	in.read((char*)&id, sizeof(uint32_t));
+	is.read((char*)&id, sizeof(uint32_t));
 	if (id != FORM)
 	{
 		throw std::runtime_error("Invalid FORM header.");
 	}
 
 	// size of chunk (big-endian)
-	in.read((char*)&size, sizeof(uint32_t));
+	is.read((char*)&size, sizeof(uint32_t));
 
-	in.read((char*)&id, sizeof(uint32_t));
+	is.read((char*)&id, sizeof(uint32_t));
 	if (id != WVQA)
 	{
 		throw std::runtime_error("Invalid WVQA header.");
 	}
 
-	in.read((char*)&id, sizeof(uint32_t));
+	is.read((char*)&id, sizeof(uint32_t));
 	if (id != VQHD)
 	{
 		throw std::runtime_error("Invalid VQHD header.");
 	}
 
 	// size of chunk (big-endian)
-	in.read((char*)&size, sizeof(uint32_t));
+	is.read((char*)&size, sizeof(uint32_t));
 
-	in.read((char*)&header, sizeof(VqhdChunk));
+	is.read((char*)&header, sizeof(VqhdChunk));
 }
 
-void VqaFile::readCodebook()
+void VqaFile::readCodebook(std::istream& is)
 {
 	// screen block data -> array of blockW * blockH
 	// read size
 	uint8_t tmp[4];
 	//uint32_t size;
-	in.read((char*)tmp, sizeof(uint32_t));
+	is.read((char*)tmp, sizeof(uint32_t));
 	//size = b2l(tmp);
 
 	uint8_t format;
-	in.read((char*)&format, sizeof(uint8_t));
+	is.read((char*)&format, sizeof(uint8_t));
 	if (format == 0x0)
 	{
-		readFormat80();
+		readFormat80(is);
 	}
 	else
 	{
@@ -142,7 +62,7 @@ void VqaFile::readCodebook()
 	}
 }
 
-void VqaFile::readFormat80()
+void VqaFile::readFormat80(std::istream& is)
 {
 	// target buffer
 	std::vector<uint8_t> dst;
@@ -152,14 +72,14 @@ void VqaFile::readFormat80()
 	// TODO: the following reads too much data... find out why
 	while (1)
 	{
-		in.read((char*)&cmd, sizeof(uint8_t));
+		is.read((char*)&cmd, sizeof(uint8_t));
 		
 		// Method 2: 0cccpppp pppppppp
 		// Copy <count> bytes from dest at current position - <pos> to current position.
 		if (~cmd & 0x80)
 		{
 			count8 = (cmd >> 4) + 3;
-			in.read((char*)&pos8, sizeof(uint8_t));
+			is.read((char*)&pos8, sizeof(uint8_t));
 			pos8 = (((cmd & 0xf) << 8) + pos8);
 
 			// copy <count> from <pos> to <dst>
@@ -182,7 +102,7 @@ void VqaFile::readFormat80()
 			// copy <cout> bytes from <in> to <dst>
 			auto cur = dst.size();
 			dst.resize(cur + count8);
-			in.read((char*)&dst[cur], count8 * sizeof(uint8_t)); 
+			is.read((char*)&dst[cur], count8 * sizeof(uint8_t)); 
 			continue;
 		} 
 
@@ -191,7 +111,7 @@ void VqaFile::readFormat80()
 		if (count8 < 0x3e)
 		{
 			count8 += 3;
-			in.read((char*)&pos16, sizeof(uint16_t));
+			is.read((char*)&pos16, sizeof(uint16_t));
 			// copy <count> from <pos> to <dst>
 			dst.resize(dst.size() + count8);
 			auto from = dst.end() - pos16 - count8;
@@ -203,9 +123,9 @@ void VqaFile::readFormat80()
 		// Fill <count> bytes with color <xx>
 		if (count8 == 0x3e)
 		{
-			in.read((char*)&count16, sizeof(uint16_t));
+			is.read((char*)&count16, sizeof(uint16_t));
 			uint8_t color;
-			in.read((char*)&color, sizeof(uint8_t));
+			is.read((char*)&color, sizeof(uint8_t));
 			while (count16-- > 0)
 			{
 				dst.push_back(color);
@@ -215,11 +135,89 @@ void VqaFile::readFormat80()
 
 		// Method 5: 11111111 ccccpppp
 		// Copy <count> bytes from dest at cur - <pos> to dest.
-		in.read((char*)&count16, sizeof(uint16_t));
-		in.read((char*)&pos16, sizeof(uint16_t));
+		is.read((char*)&count16, sizeof(uint16_t));
+		is.read((char*)&pos16, sizeof(uint16_t));
 		// copy <count> from <pos> to <dst>
 		dst.resize(dst.size() + count16);
 		auto from = dst.end() - pos16 - count16;
 		std::copy(from, from + count16, dst.end() - count16);
 	}
+}
+
+std::istream& operator>>(std::istream& is, VqaFile& file)
+{
+	file.readHeader(is);
+	std::cout << "Found VQA with " << file.header.numFrames << " frames of size "
+		<< file.header.width << " by " << file.header.height << std::endl;
+	return is; // giving up on this format for now...
+
+	while (true)
+	{
+		uint32_t id;
+		uint32_t size;
+		uint8_t tmp[4];
+		is.read((char*)&id, sizeof(uint32_t));
+
+		std::cout << std::hex << id << std::endl;
+
+		switch (id)
+		{
+		case VqaFile::LINF:
+			// followed by 4 bytes
+			is.seekg(4, std::ios_base::cur);
+			break;
+		case VqaFile::LINH:
+			// followed by 10 bytes
+			is.seekg(10, std::ios_base::cur);
+			break;
+		case VqaFile::LIND:
+			// followed by 8 bytes
+			is.seekg(8, std::ios_base::cur);
+			break;
+		case VqaFile::CINF:
+			// followed by 4 bytes
+			is.seekg(4, std::ios_base::cur);
+			break;
+		case VqaFile::CINH:
+			// followed by 12 bytes
+			is.seekg(12, std::ios_base::cur);
+			break;
+		case VqaFile::CIND:
+			// followed by 10 bytes
+			is.seekg(10, std::ios_base::cur);
+			break;
+		case VqaFile::FINF: // Frame Information - offset into each frame
+			is.seekg(4, std::ios_base::cur); // not clear what this is...
+			is.seekg(file.header.numFrames * sizeof(uint32_t), std::ios_base::cur); // offsets need to multipled by 2
+			break;
+		case VqaFile::SN2J:
+			is.read((char*)tmp, sizeof(uint32_t));
+			size = b2l(tmp);
+			is.seekg(size, std::ios_base::cur);
+			break;
+		case VqaFile::SND2:
+			is.read((char*)tmp, sizeof(uint32_t));
+			size = b2l(tmp);
+			// TODO: why is there an extra byte here?
+			is.seekg(size + 1, std::ios_base::cur);
+			break;
+
+			// Vector Quantized Frame
+		case VqaFile::VQFR:
+			is.read((char*)tmp, sizeof(uint32_t));
+			size = b2l(tmp);
+			// followed by chunks
+			break;
+
+			// Code book, full, compressed 
+		case VqaFile::CBFZ:
+			file.readCodebook(is);
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	return is;
 }

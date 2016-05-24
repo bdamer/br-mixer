@@ -19,7 +19,7 @@ struct MixHeader
 
 struct MixEntry
 {
-	uint32_t id;	// id file name hash
+	uint32_t id;			// id file name hash
 	int32_t offset;			// byte offset in data segment
 	int32_t size;			// byte length of data entry
 };
@@ -88,29 +88,39 @@ private:
 	static const uint32_t GAMEINFO_ID = 0x00000049;
 	static const uint32_t DAT_ID = 0x3457b6f6; // timestamp 10/29/1997 @ 10:21pm (UTC)
 
-	std::ifstream in;
+	std::fstream fs;
 	MixHeader header;
-	std::vector<MixEntry> entries;
+	std::map<uint32_t, MixEntry> entries;
 	// Offset of entries in MIX file
 	int dataOffset;
 
-	// Loads header from mix file.
-	void load();
+	// Loads a MixEntry.
+	void loadEntry(const MixEntry& entry);
 	// Positions stream pointer at start of file and returns the offset.
-	int moveToFile(int idx);
+	int moveToFile(const MixEntry& entry);
 	// Attempts to detect file type based by reading data from file.
-	FileType detectFileType(void);
-
-	uint32_t computeHash(const std::string& s) const;
+	FileType detectFileType(const MixEntry& entry);
+	// Computes file id hash.
+	static uint32_t computeHash(const std::string& s);
 
 public:
+	// Loads a list of id => filename from a file.
 	static void loadKnownIds(const std::string& filename);
+	// Loads and indexes a list of filenames from a file.
+	static void loadFilenames(const std::string& filename);
 
 	MixFile(const std::string& filename);
-	~MixFile(void);
+	~MixFile(void) { }
 
 	void listFiles(void);
 	void loadByName(const std::string& name);
-	void loadByIndex(int idx);
 	void loadById(uint32_t id);
+
+	// Loads header from mix file.
+	friend std::istream& operator>>(std::istream& is, MixFile& utf);
 };
+
+inline std::string fileExtension(const std::string& filename)
+{
+	return filename.substr(filename.rfind('.') + 1);
+}

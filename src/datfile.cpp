@@ -1,25 +1,22 @@
 #include "datfile.h"
-
 #include <iostream>
 
-DatFile::DatFile(std::ifstream& in, int32_t length) : in(in), length(length)
+std::istream& operator>>(std::istream& is, DatFile& file)
 {
-	in.read((char*)&pageSize, sizeof(int32_t));
-	in.read((char*)&pageCount, sizeof(int32_t));
-	in.read((char*)&paletteCount, sizeof(int32_t));
+	is.read((char*)&file.pageSize, sizeof(int32_t));
+	is.read((char*)&file.pageCount, sizeof(int32_t));
+	is.read((char*)&file.paletteCount, sizeof(int32_t));
 
-	std::cout << "DAT file contains " << pageSize << " pages." << std::endl;
+	std::cout << "DAT file contains " << file.pageSize << " pages." << std::endl;
 
-	std::cout << "DAT file contains " << paletteCount << " color palettes." << std::endl;
-	int skip = paletteCount * 256 * 3; // each palette contains 256 RGB entries
-	in.seekg(skip, std::ios_base::cur);
+	std::cout << "DAT file contains " << file.paletteCount << " color palettes." << std::endl;
+	int skip = file.paletteCount * 256 * 3; // each palette contains 256 RGB entries
+	is.seekg(skip, std::ios_base::cur);
 
-	in.read((char*)&animationCount, sizeof(int32_t));
-	std::cout << "DAT file contains " << animationCount << " animations." << std::endl;
+	is.read((char*)&file.animationCount, sizeof(int32_t));
+	std::cout << "DAT file contains " << file.animationCount << " animations." << std::endl;
 
-	skip = animationCount * 8 * 4; // each animation consists of 8 * 4 byte attributes
-}
+	skip = file.animationCount * 8 * 4; // each animation consists of 8 * 4 byte attributes
 
-DatFile::~DatFile(void)
-{
+	return is;
 }

@@ -9,21 +9,28 @@ int main(int argc, char** argv)
 		return 1;
 	}
 
-	MixFile::loadKnownIds("../data/id.txt");
-
-	MixFile file(argv[1]);
-	std::string input;
-	while (true)
+	try
 	{
-		std::cout << "[L]ist files, enter file name to load, or [Q]uit: ";
-		std::cin >> input;
+		MixFile::loadFilenames("../data/filenames.txt");
 
-		if (input == "q")
-			break;
-		else if (input == "l")
-			file.listFiles();
-		else
-			file.loadByName(input);
+		MixFile file(argv[1]);
+		std::string input;
+		while (true)
+		{
+			std::cout << "[L]ist files, enter file name to load, or [Q]uit: ";
+			std::cin >> input;
+			if (input == "q")
+				break;
+			else if (input == "l")
+				file.listFiles();
+			else
+				file.loadByName(input);
+		}
+		return 0;
 	}
-	return 0;
+	catch (const std::runtime_error& e)
+	{
+		std::cerr << "Error: " << e.what() << std::endl;
+		return 1;
+	}
 }

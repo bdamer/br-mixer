@@ -1,6 +1,6 @@
 #pragma once
 
-#include <fstream>
+#include <istream>
 #include <stdint.h>
 
 #pragma pack(push, 1)
@@ -31,7 +31,6 @@ struct VqhdChunk
 };
 #pragma pack(pop)
 
-
 // Vector Quantized Animation
 class VqaFile
 {
@@ -51,17 +50,16 @@ private:
 	static const uint32_t VQHD = 0x44485156;
 	static const uint32_t WVQA = 0x41515657;
 
-	std::istream& in;
 	VqhdChunk header;
 
-	void readHeader(void);
-	bool readNextBodyChunk(void);
-	void readCodebook(void);
-
-	void readFormat80(void);
+	void readHeader(std::istream& is);
+	bool readNextBodyChunk(std::istream& is);
+	void readCodebook(std::istream& is);
+	void readFormat80(std::istream& is);
 
 public:
-	VqaFile(std::istream& in);
-	~VqaFile(void);
+	VqaFile(void) { };
+	~VqaFile(void) { };
 
+	friend std::istream& operator >> (std::istream& is, VqaFile& file);
 };
