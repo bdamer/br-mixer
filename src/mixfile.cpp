@@ -14,10 +14,9 @@
 
 std::map<uint32_t,std::string> MixFile::KNOWN_IDS;
 
-MixFile::MixFile(const std::string& filename)
+MixFile::MixFile(const std::string& filename) : fs(filename, std::fstream::in | std::fstream::binary)
 {
 	std::cout << "Loading MIX file: " << filename << std::endl;
-	fs = std::fstream(filename, std::fstream::in | std::fstream::binary);
 	if (!fs)
 	{
 		throw std::runtime_error("Error opening file: " + filename);
