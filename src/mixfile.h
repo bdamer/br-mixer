@@ -13,7 +13,7 @@
 #pragma pack(push, 1)
 struct MixHeader
 {
-	int16_t fileCount;		// number of file entries
+	int16_t file_count;		// number of file entries
 	int32_t size;			// byte length of data segment
 };
 
@@ -92,35 +92,39 @@ private:
 	MixHeader header;
 	std::map<uint32_t, MixEntry> entries;
 	// Offset of entries in MIX file
-	int dataOffset;
+	int data_offset;
 
 	// Loads a MixEntry.
-	void loadEntry(const MixEntry& entry);
+	void load_entry(const MixEntry& entry);
+	// Extracts a MixEntry.
+	void extract_entry(const MixEntry& entry);
 	// Positions stream pointer at start of file and returns the offset.
-	int moveToFile(const MixEntry& entry);
+	int move_to_file(const MixEntry& entry);
 	// Attempts to detect file type based by reading data from file.
-	FileType detectFileType(const MixEntry& entry);
+	FileType detect_file_types(const MixEntry& entry);
 	// Computes file id hash.
-	static uint32_t computeHash(const std::string& s);
+	static uint32_t compute_hash(const std::string& s);
 
 public:
 	// Loads a list of id => filename from a file.
-	static void loadKnownIds(const std::string& filename);
+	static bool load_known_ids(const std::string& filename);
 	// Loads and indexes a list of filenames from a file.
-	static void loadFilenames(const std::string& filename);
+	static bool load_filenames(const std::string& filename);
 
 	MixFile(const std::string& filename);
 	~MixFile(void) { }
 
-	void listFiles(void);
-	void loadByName(const std::string& name);
-	void loadById(uint32_t id);
+	void list_files(void);
+	void load_file(const std::string& name);
+	void load_file(uint32_t id);
+	void extract_file(const std::string& name);
+	void extract_file(uint32_t id);
 
 	// Loads header from mix file.
 	friend std::istream& operator>>(std::istream& is, MixFile& utf);
 };
 
-inline std::string fileExtension(const std::string& filename)
+inline std::string get_file_extension(const std::string& filename)
 {
 	return filename.substr(filename.rfind('.') + 1);
 }

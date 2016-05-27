@@ -24,13 +24,13 @@ MixFile::MixFile(const std::string& filename) : fs(filename, std::fstream::in | 
 	fs >> *this;
 }
 
-void MixFile::loadKnownIds(const std::string& filename)
+bool MixFile::load_known_ids(const std::string& filename)
 {
 	std::cout << "Loading known file IDs from: " << filename << std::endl;
 	std::ifstream file(filename);
 	if (!file)
 	{
-		throw std::runtime_error("Error opening file: " + filename);
+		return false;
 	}
 
 	for (std::string line; std::getline(file, line); )
@@ -46,41 +46,44 @@ void MixFile::loadKnownIds(const std::string& filename)
 			KNOWN_IDS[id] = name;
 		}
 	}
+
+	return true;
 }
 
-void MixFile::loadFilenames(const std::string & filename)
+bool MixFile::load_filenames(const std::string & filename)
 {
 	std::cout << "Loading known filenames from: " << filename << std::endl;
 	std::ifstream file(filename);
 	if (!file)
 	{
-		throw std::runtime_error("Error opening file: " + filename);
+		return false;
 	}
 
 	for (std::string line; std::getline(file, line); )
 	{
 		if (line.size() == 0)
 			continue;
-		auto id = MixFile::computeHash(line);
+		auto id = MixFile::compute_hash(line);
 		KNOWN_IDS[id] = line;
 	}
+	return true;
 }
 
-int MixFile::moveToFile(const MixEntry& entry)
+int MixFile::move_to_file(const MixEntry& entry)
 {
-	int offset = dataOffset + entry.offset;
+	int offset = data_offset + entry.offset;
 	fs.seekg(offset);
 	return offset;
 }
 
-void MixFile::listFiles(void)
+void MixFile::list_files(void)
 {
 	std::cout << "ID      \tName    \tOffset  \tSize    \tType" << std::endl;
 	for (auto it : entries)
 	{
 		// Attempt to detect type
-		moveToFile(it.second);
-		auto t = detectFileType(it.second);
+		move_to_file(it.second);
+		auto t = detect_file_types(it.second);
 
 		std::string name = "UNKNOWN";
 		if (KNOWN_IDS.count(it.first) > 0)
@@ -90,7 +93,7 @@ void MixFile::listFiles(void)
 
 		std::cout << std::hex << std::setw(8) << it.second.id << "\t"
 			<< std::setw(8) << name << "\t"
-			<< std::dec << std::setw(8) << (dataOffset + it.second.offset) << "\t"
+			<< std::dec << std::setw(8) << (data_offset + it.second.offset) << "\t"
 			<< std::dec << std::setw(8) << it.second.size << "\t"
 			<< std::setw(4) << t << std::endl;
 	}
@@ -98,7 +101,7 @@ void MixFile::listFiles(void)
 
 // Computes a simple file hash. The hash is case-insensitive and works for 
 // ASCII characters only.
-uint32_t MixFile::computeHash(const std::string& s)
+uint32_t MixFile::compute_hash(const std::string& s)
 {
 	// pad size to multiple of 4
 	int size = (s.length() + 3) & ~0x03;
@@ -115,25 +118,24 @@ uint32_t MixFile::computeHash(const std::string& s)
 	return res;
 }
 
-void MixFile::loadByName(const std::string& name)
+void MixFile::load_file(const std::string& name)
 {
-	loadById(computeHash(name));
+	load_file(compute_hash(name));
 }
 
-void MixFile::loadById(uint32_t id)
+void MixFile::load_file(uint32_t id)
 {
-	// TODO: IDs are stored in increasing order -> perform binary search
 	if (entries.count(id) == 0)
 	{
 		std::cerr << "Could not find entry for id: 0x" << std::hex << id << std::dec << std::endl;
 	}
 	else
 	{
-		loadEntry(entries.at(id));
+		load_entry(entries.at(id));
 	}
 }
 
-FileType MixFile::detectFileType(const MixEntry& entry)
+FileType MixFile::detect_file_types(const MixEntry& entry)
 {
 	uint32_t tmp;
 	fs.read((char*)&tmp, sizeof(uint32_t));
@@ -158,7 +160,7 @@ FileType MixFile::detectFileType(const MixEntry& entry)
 	{
 		if (KNOWN_IDS.count(entry.id) > 0)
 		{
-			auto ext = fileExtension(KNOWN_IDS[entry.id]);
+			auto ext = get_file_extension(KNOWN_IDS[entry.id]);
 			if (ext == "DAT")
 			{
 				return FileType::DAT;
@@ -184,15 +186,15 @@ FileType MixFile::detectFileType(const MixEntry& entry)
 	}
 }
 
-void MixFile::loadEntry(const MixEntry& entry)
+void MixFile::load_entry(const MixEntry& entry)
 {
-	int offset = moveToFile(entry);
+	int offset = move_to_file(entry);
 	// Autodetect file type
-	switch (detectFileType(entry))
+	switch (detect_file_types(entry))
 	{
 	case VQA:
 		{
-			std::cout << "Loading VQA file." << std::endl;
+			std::cout << "Loading VQA file..." << std::endl;
 			fs.seekg(offset);
 			VqaFile vqa;
 			fs >> vqa;
@@ -201,7 +203,7 @@ void MixFile::loadEntry(const MixEntry& entry)
 
 	case SET:
 		{
-			std::cout << "Loading Set file." << std::endl;
+			std::cout << "Loading SET file..." << std::endl;
 			SetHeader sh;
 			fs.read((char*)&sh, sizeof(sh));
 			std::vector<SetItem> items;
@@ -220,7 +222,7 @@ void MixFile::loadEntry(const MixEntry& entry)
 
 	case GAMEINFO:
 		{
-			std::cout << "Loading GAMEINFO file." << std::endl;
+			std::cout << "Loading GAMEINFO file..." << std::endl;
 			fs.seekg(offset);
 			GameInfo info;
 			fs.read((char*)&info, sizeof(info));
@@ -234,7 +236,7 @@ void MixFile::loadEntry(const MixEntry& entry)
 				ss.str("");
 				fs.read(name, 5 * sizeof(char));
 				ss << name << "-MIN.SET";
-				std::cout << computeHash(ss.str()) << "=" << ss.str() << std::endl;
+				std::cout << compute_hash(ss.str()) << "=" << ss.str() << std::endl;
 			}
 
 			std::cout << std::endl << "Listing audio files: " << std::endl;
@@ -243,7 +245,7 @@ void MixFile::loadEntry(const MixEntry& entry)
 				ss.str("");
 				fs.read(name, 9 * sizeof(char));
 				ss << name << ".AUD";
-				std::cout << computeHash(ss.str()) << "=" << ss.str() << std::endl;
+				std::cout << compute_hash(ss.str()) << "=" << ss.str() << std::endl;
 			}
 
 			std::cout << std::endl << "Listing music files: " << std::endl;
@@ -252,7 +254,7 @@ void MixFile::loadEntry(const MixEntry& entry)
 				ss.str("");
 				fs.read(name, 9 * sizeof(char));
 				ss << name << ".AUD";
-				std::cout << computeHash(ss.str()) << "=" << ss.str() << std::endl;
+				std::cout << compute_hash(ss.str()) << "=" << ss.str() << std::endl;
 			}
 
 			std::cout << std::endl << "Listing movies: " << std::endl;
@@ -261,7 +263,7 @@ void MixFile::loadEntry(const MixEntry& entry)
 				ss.str("");
 				fs.read(name, 9 * sizeof(char));
 				ss << name << ".VQA";
-				std::cout << computeHash(ss.str()) << "=" << ss.str() << std::endl;
+				std::cout << compute_hash(ss.str()) << "=" << ss.str() << std::endl;
 			}
 
 			std::cout << std::dec;
@@ -271,7 +273,7 @@ void MixFile::loadEntry(const MixEntry& entry)
 	case DAT:
 		{
 			// Doesn't work for GAMEINFO.DAT or INDEX.DAT
-			std::cout << "Loading DAT file." << std::endl;
+			std::cout << "Loading DAT file..." << std::endl;
 			DatFile dat(entry.size);
 			fs >> dat;
 		}
@@ -279,13 +281,51 @@ void MixFile::loadEntry(const MixEntry& entry)
 
 	case TRE:
 		{
-			std::cout << "Loading TRE file." << std::endl;
+			std::cout << "Loading TRE file..." << std::endl;
 			fs.seekg(offset);
 			TreFile tre(entry.size);
 			fs >> tre;
-			for (std::size_t i = 0; i < tre.size(); i++)
+			std::cout << "Found " << tre.count() << " entries." << std::endl;
+			for (auto i = 0; i < tre.count(); i++)
 			{
-				std::cout << tre.getString(i) << std::endl;
+				std::cout << tre.get_string(i) << std::endl;
+			}
+		}
+		break;
+
+	case SHP:
+		{
+			std::cout << "Loading SHP file..." << std::endl;
+			fs.seekg(offset);
+			ShpFile shp;
+			fs >> shp;
+			std::cout << "Found " << shp.count() << " images." << std::endl;
+
+			char c;
+			do
+			{
+				std::cout << "Save images to disk? (y/n) ";
+				std::cin >> c;
+			} 
+			while (c != 'Y' && c != 'y' && c != 'N' && c != 'n');
+			if (c == 'Y' || c == 'y')
+			{
+				std::string basename;
+				if (KNOWN_IDS.count(entry.id) > 0)
+				{
+					basename = KNOWN_IDS.at(entry.id);
+				}
+				else
+				{
+					basename = std::to_string(entry.id);
+				}
+
+				for (int i = 0; i < shp.count(); i++)
+				{
+					std::ostringstream ss;
+					ss << "../data/" << basename << "-" << i << ".png";
+					shp.save_as_png(i, ss.str());
+				}
 			}
 		}
 		break;
@@ -293,43 +333,76 @@ void MixFile::loadEntry(const MixEntry& entry)
 	case UNKNOWN:
 	default:
 		{
-			char choice;
-			std::cout << "Press [s] to attempt to load file as SHP, or press any other key to return...";
-			std::cin >> choice;
-
-			if (choice == 's')
+			char c;
+			do
 			{
-				fs.seekg(offset);
-				ShpFile shp;
-				fs >> shp;
-				std::cout << "Save to disk? (y/n)";
-				std::cin >> choice;
-				if (choice == 'y')
-				{
-					for (int i = 0; i < shp.count(); i++)
-					{
-						std::ostringstream ss;
-						ss << "C:\\" << "sprite-" << entry.id << "." << i << ".png";
-						shp.saveAsPng(i, ss.str());
-					}
-				}
+				std::cout << "Unable to determine file type. Would you like to extract the file to disk? (y/n) ";
+				std::cin >> c;
+			}
+			while (c != 'Y' && c != 'y' && c != 'N' && c != 'n');
+			if (c == 'Y' || c == 'y')
+			{
+				extract_file(entry.id);
 			}
 		}		
 		break;
 	}
 }
 
+void MixFile::extract_file(const std::string& name)
+{
+	auto id = compute_hash(name);
+	extract_file(id);
+}
+
+void MixFile::extract_file(uint32_t id)
+{
+	if (entries.count(id) == 0)
+	{
+		std::cerr << "Could not find entry for id: 0x" << std::hex << id << std::dec << std::endl;
+	}
+	else
+	{
+		extract_entry(entries.at(id));
+	}
+}
+
+void MixFile::extract_entry(const MixEntry& entry)
+{
+	std::string target = "../data/";
+	if (KNOWN_IDS.count(entry.id) > 0)
+	{
+		target += KNOWN_IDS.at(entry.id);
+	}
+	else
+	{
+		target += std::to_string(entry.id);
+	}
+
+	std::cout << "Extracting file to: " << target << std::endl;
+	std::fstream os(target, std::fstream::out | std::fstream::binary);
+	if (!os)
+	{
+		throw std::runtime_error("Could not open file: " + target);
+	}
+
+	std::vector<char> buffer(entry.size);
+	move_to_file(entry);
+	fs.read(buffer.data(), entry.size);
+	os.write(buffer.data(), entry.size);
+}
+
 std::istream& operator>>(std::istream& is, MixFile& utf)
 {
 	is.read((char*)&utf.header, sizeof(MixHeader));
-	std::cout << "Found " << utf.header.fileCount << " entries." << std::endl;
+	std::cout << "Found " << utf.header.file_count << " entries." << std::endl;
 	MixEntry entry;
-	for (auto i = 0; i < utf.header.fileCount; i++)
+	for (auto i = 0; i < utf.header.file_count; i++)
 	{
 		is.read((char*)&entry, sizeof(MixEntry));
 		utf.entries[entry.id] = entry;
 	}
 	// compute base offset once
-	utf.dataOffset = sizeof(MixHeader) + utf.header.fileCount * sizeof(MixEntry);
+	utf.data_offset = sizeof(MixHeader) + utf.header.file_count * sizeof(MixEntry);
 	return is;
 }

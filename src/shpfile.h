@@ -17,7 +17,7 @@ struct ShpHeader
 class ShpFile
 {
 private:
-	int32_t numImages;
+	int32_t num_images;
 	std::vector<png::image<png::rgb_pixel>> images;
 
 public:
@@ -25,8 +25,8 @@ public:
 	~ShpFile(void) { }
 
 	// Saves the image at the specified index from this SHP to a file.
-	void saveAsPng(int idx, const std::string& filename);
-	int32_t count() const { return numImages; }
+	void save_as_png(int idx, const std::string& filename);
+	int32_t count() const { return num_images; }
 
 	friend std::istream& operator>>(std::istream& is, ShpFile& file);
 };

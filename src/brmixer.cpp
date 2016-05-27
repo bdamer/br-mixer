@@ -11,20 +11,38 @@ int main(int argc, char** argv)
 
 	try
 	{
-		MixFile::loadFilenames("../data/filenames.txt");
+		if (!MixFile::load_filenames("../data/filenames.txt"))
+		{
+			std::cerr << "Unable to load known filenames - file name resolution disabled." << std::endl;
+		}
 
 		MixFile file(argv[1]);
 		std::string input;
 		while (true)
 		{
-			std::cout << "[L]ist files, enter file name to load, or [Q]uit: ";
-			std::cin >> input;
-			if (input == "q")
+			char c;
+			std::cout << "[S]how all files, [L]oad file entry, [E]xtract file entry, or [Q]uit: ";
+			std::cin >> c;
+			if (c == 's' || c == 'S')
+			{
+				file.list_files();
+			}
+			else if (c == 'l' || c == 'L')
+			{
+				std::cout << "Enter the file to load: ";
+				std::cin >> input;
+				file.load_file(input);
+			}
+			else if (c == 'e' || c == 'E')
+			{
+				std::cout << "Enter the file to extract: ";
+				std::cin >> input;
+				file.extract_file(input);
+			}
+			else if (c == 'q' || c == 'Q')
+			{
 				break;
-			else if (input == "l")
-				file.listFiles();
-			else
-				file.loadByName(input);
+			}
 		}
 		return 0;
 	}

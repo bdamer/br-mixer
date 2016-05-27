@@ -2,59 +2,57 @@
 
 #include <iostream>
 #include <vector>
-#include <png++/png.hpp>
 #include <stdexcept>
+#include <string>
+
+#include <png++/png.hpp>
 
 uint32_t b2l(uint8_t* b)
 {
 	return ((int)b[0] << 24) + ((int)b[1] << 16) + ((int)b[2] << 8) + b[3];
 }
 
-void VqaFile::readHeader(std::istream& is)
+void VqaFile::process_chunk_header(std::istream& is, ChunkHeader& ch)
 {
-	uint32_t id;
-	uint32_t size;
-	is.read((char*)&id, sizeof(uint32_t));
-	if (id != FORM)
+	is.read(reinterpret_cast<char*>(&ch.id), sizeof(uint32_t));
+	uint8_t tmp[4];
+	is.read(reinterpret_cast<char*>(tmp), sizeof(uint8_t) * 4);
+	ch.size = b2l(tmp);
+}
+
+void VqaFile::read_header(std::istream& is)
+{
+	ChunkHeader ch;
+	process_chunk_header(is, ch);
+	if (ch.id != FORM)
 	{
 		throw std::runtime_error("Invalid FORM header.");
 	}
 
-	// size of chunk (big-endian)
-	is.read((char*)&size, sizeof(uint32_t));
-
-	is.read((char*)&id, sizeof(uint32_t));
-	if (id != WVQA)
+	uint32_t type;
+	is.read(reinterpret_cast<char*>(&type), sizeof(uint32_t));
+	if (type != WVQA)
 	{
 		throw std::runtime_error("Invalid WVQA header.");
 	}
 
-	is.read((char*)&id, sizeof(uint32_t));
-	if (id != VQHD)
+	process_chunk_header(is, ch);
+	if (ch.id != VQHD)
 	{
 		throw std::runtime_error("Invalid VQHD header.");
 	}
-
-	// size of chunk (big-endian)
-	is.read((char*)&size, sizeof(uint32_t));
-
 	is.read((char*)&header, sizeof(VqhdChunk));
 }
 
-void VqaFile::readCodebook(std::istream& is)
+void VqaFile::read_codebook(std::istream& is)
 {
 	// screen block data -> array of blockW * blockH
-	// read size
-	uint8_t tmp[4];
-	//uint32_t size;
-	is.read((char*)tmp, sizeof(uint32_t));
-	//size = b2l(tmp);
 
 	uint8_t format;
 	is.read((char*)&format, sizeof(uint8_t));
 	if (format == 0x0)
 	{
-		readFormat80(is);
+		read_format_80(is);
 	}
 	else
 	{
@@ -62,7 +60,7 @@ void VqaFile::readCodebook(std::istream& is)
 	}
 }
 
-void VqaFile::readFormat80(std::istream& is)
+void VqaFile::read_format_80(std::istream& is)
 {
 	// target buffer
 	std::vector<uint8_t> dst;
@@ -144,77 +142,94 @@ void VqaFile::readFormat80(std::istream& is)
 	}
 }
 
+
 std::istream& operator>>(std::istream& is, VqaFile& file)
 {
-	file.readHeader(is);
-	std::cout << "Found VQA with " << file.header.numFrames << " frames of size "
+	file.read_header(is);
+	std::cout << "Found VQA with " << file.header.num_frames << " frames of size "
 		<< file.header.width << " by " << file.header.height << std::endl;
 	return is; // giving up on this format for now...
 
+	ChunkHeader ch;
+	uint16_t loop_count;
+	uint32_t loop_flags;
+	uint16_t clip_count;
+	uint32_t skip;
 	while (true)
 	{
-		uint32_t id;
-		uint32_t size;
-		uint8_t tmp[4];
-		is.read((char*)&id, sizeof(uint32_t));
+		file.process_chunk_header(is, ch);
 
-		std::cout << std::hex << id << std::endl;
-
-		switch (id)
+		switch (ch.id)
 		{
 		case VqaFile::LINF:
-			// followed by 4 bytes
-			is.seekg(4, std::ios_base::cur);
+			std::cout << "LINF (" << ch.size << ")" << std::endl;
 			break;
 		case VqaFile::LINH:
-			// followed by 10 bytes
-			is.seekg(10, std::ios_base::cur);
+			std::cout << "LINH (" << ch.size << ")" << std::endl;
+			is.read(reinterpret_cast<char*>(&loop_count), sizeof(uint16_t));
+			is.read(reinterpret_cast<char*>(&loop_flags), sizeof(uint32_t));
+			std::cout << "Loop count: " << loop_count << " flags: " << loop_flags << std::endl;
 			break;
 		case VqaFile::LIND:
-			// followed by 8 bytes
-			is.seekg(8, std::ios_base::cur);
+			std::cout << "LIND (" << ch.size << ")" << std::endl;
+			for (auto i = 0; i < loop_count; i++)
+			{
+				uint16_t begin, end;
+				is.read(reinterpret_cast<char*>(&begin), sizeof(uint16_t));
+				is.read(reinterpret_cast<char*>(&end), sizeof(uint16_t));
+				std::cout << "Loop " << i << " from " << begin << " to " << end << std::endl;
+			}
 			break;
 		case VqaFile::CINF:
-			// followed by 4 bytes
-			is.seekg(4, std::ios_base::cur);
+			std::cout << "CINF (" << ch.size << ")" << std::endl;
 			break;
 		case VqaFile::CINH:
-			// followed by 12 bytes
-			is.seekg(12, std::ios_base::cur);
+			std::cout << "CINH (" << ch.size << ")" << std::endl;
+			is.read(reinterpret_cast<char*>(&clip_count), sizeof(uint16_t));
+			std::cout << "Clip count: " << clip_count << std::endl;
+			is.seekg(6, std::ios_base::cur);
 			break;
 		case VqaFile::CIND:
-			// followed by 10 bytes
-			is.seekg(10, std::ios_base::cur);
+			std::cout << "CIND (" << ch.size << ")" << std::endl;
+			for (auto i = 0; i < clip_count; i++)
+			{
+				// TODO: document
+				uint16_t tmp16;
+				uint32_t tmp32;
+				is.read(reinterpret_cast<char*>(&tmp16), sizeof(uint16_t));
+				is.read(reinterpret_cast<char*>(&tmp32), sizeof(uint32_t));
+			}
 			break;
 		case VqaFile::FINF: // Frame Information - offset into each frame
-			is.seekg(4, std::ios_base::cur); // not clear what this is...
-			is.seekg(file.header.numFrames * sizeof(uint32_t), std::ios_base::cur); // offsets need to multipled by 2
+			std::cout << "FINF (" << ch.size << ")" << std::endl;
+			// alternatively, could skip ch.size
+			is.seekg(file.header.num_frames * sizeof(uint32_t), std::ios_base::cur); // offsets need to multipled by 2
 			break;
 		case VqaFile::SN2J:
-			is.read((char*)tmp, sizeof(uint32_t));
-			size = b2l(tmp);
-			is.seekg(size, std::ios_base::cur);
+			std::cout << "SN2J (" << ch.size << ")" << std::endl;
+			is.seekg(ch.size, std::ios_base::cur);
 			break;
 		case VqaFile::SND2:
-			is.read((char*)tmp, sizeof(uint32_t));
-			size = b2l(tmp);
-			// TODO: why is there an extra byte here?
-			is.seekg(size + 1, std::ios_base::cur);
+			std::cout << "SND2 (" << ch.size << ")" << std::endl;
+			// skip size rounded up
+			skip = (ch.size + 1) & ~1u;
+			is.seekg(skip, std::ios_base::cur);
 			break;
 
-			// Vector Quantized Frame
+		// Vector Quantized Frame
 		case VqaFile::VQFR:
-			is.read((char*)tmp, sizeof(uint32_t));
-			size = b2l(tmp);
+			std::cout << "VQFR (" << ch.size << ")" << std::endl;
 			// followed by chunks
 			break;
 
-			// Code book, full, compressed 
+		// Code book, full, compressed 
 		case VqaFile::CBFZ:
-			file.readCodebook(is);
+			std::cout << "CBFZ (" << ch.size << ")" << std::endl;
+			file.read_codebook(is);
 			break;
 
 		default:
+			std::cout << "Unknown: 0x" << std::hex << ch.id << std::dec << std::endl;
 			break;
 		}
 	}

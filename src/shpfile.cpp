@@ -3,7 +3,7 @@
 #include <vector>
 #include <png++/png.hpp>
 
-void ShpFile::saveAsPng(int idx, const std::string& filename)
+void ShpFile::save_as_png(int idx, const std::string& filename)
 {
 	std::cout << "Saving image " << idx << " to " << filename << std::endl;
 	images[idx].write(filename);
@@ -13,11 +13,10 @@ std::istream& operator>>(std::istream& is, ShpFile& file)
 {
 	// Blade Runner SHP is different from previous Westwood SHP files. 
 	// Each file starts with the number of images:
-	is.read((char*)&file.numImages, sizeof(int32_t));
-	std::cout << "SHP contains " << file.numImages << " images." << std::endl;
+	is.read((char*)&file.num_images, sizeof(int32_t));
 
 	// Each image has a header followed by the raw, high-color pixel data.
-	for (int i = 0; i < file.numImages; i++)
+	for (int i = 0; i < file.num_images; i++)
 	{
 		ShpHeader info;
 		is.read((char*)&info, sizeof(ShpHeader));

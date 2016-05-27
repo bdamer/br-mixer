@@ -8,19 +8,20 @@ struct VqhdChunk
 {
 	uint16_t version;			// VQA format version
 	uint16_t flags;				// Flags
-	uint16_t numFrames;			// Number of frames in this movie
+	uint16_t num_frames;		// Number of frames in this movie
 	uint16_t width;				// Width in pixels
 	uint16_t height;			// Height in pixels
-	uint8_t blockW;				// Width of each image block in pixels
-	uint8_t blockH;				// Height of each image block in pixels
-	uint8_t frameRate;			// Frame rate of VQA
+	uint8_t block_w;			// Width of each image block in pixels
+	uint8_t block_h;			// Height of each image block in pixels
+	uint8_t frame_rate;			// Frame rate of VQA
 	
-	// ...
+	// TODO: review
 	uint8_t   CBParts;       /* How many images use the same lookup table  */
 	uint16_t  Colors;        /* Maximum number of colors used in VQA       */
 	uint16_t  MaxBlocks;     /* Maximum number of image blocks             */
-	int32_t   Unknown1;      /* Always 0 ???                               */
-	uint16_t  Unknown2;      /* Some kind of size ???                      */
+	uint16_t  xpos;			 /* ???					                      */
+	uint16_t  ypos;			 /* ???			                              */
+	uint16_t  max_framesize; /* ???					                      */
 	uint16_t  Freq;          /* Sound sampling frequency                   */
 	uint8_t   Channels;      /* Number of sound channels                   */
 	uint8_t   Bits;          /* Sound resolution                           */
@@ -30,6 +31,12 @@ struct VqhdChunk
 	int32_t   Unknown5;      /* Always 0 ???                               */
 };
 #pragma pack(pop)
+
+struct ChunkHeader
+{
+	uint32_t id;
+	uint32_t size;
+};
 
 // Vector Quantized Animation
 class VqaFile
@@ -52,10 +59,11 @@ private:
 
 	VqhdChunk header;
 
-	void readHeader(std::istream& is);
-	bool readNextBodyChunk(std::istream& is);
-	void readCodebook(std::istream& is);
-	void readFormat80(std::istream& is);
+	void process_chunk_header(std::istream& is, ChunkHeader& ch);
+	void read_header(std::istream& is);
+	bool read_next_body_chunk(std::istream& is);
+	void read_codebook(std::istream& is);
+	void read_format_80(std::istream& is);
 
 public:
 	VqaFile(void) { };

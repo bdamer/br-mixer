@@ -6,10 +6,10 @@
 class DatFile
 {
 private:
-	int32_t pageSize;
-	int32_t pageCount;
-	int32_t paletteCount;
-	int32_t animationCount;
+	int32_t page_size;
+	int32_t page_count;
+	int32_t palette_count;
+	int32_t animation_count;
 	int32_t length; // length of the dat file
 
 public:
