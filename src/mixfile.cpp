@@ -76,7 +76,6 @@ int MixFile::moveToFile(const MixEntry& entry)
 void MixFile::listFiles(void)
 {
 	std::cout << "ID      \tName    \tOffset  \tSize    \tType" << std::endl;
-	int i = 0;
 	for (auto it : entries)
 	{
 		// Attempt to detect type
