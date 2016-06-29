@@ -184,3 +184,5 @@ FakesAssemblies/
 
 *.VC.db
 *.VC.opendb
+
+data/*.mix
