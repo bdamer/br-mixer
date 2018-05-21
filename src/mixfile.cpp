@@ -68,7 +68,7 @@ bool MixFile::load_filenames(const std::string & filename)
 	{
 		if (line.size() == 0)
 			continue;
-		auto id = MixFile::compute_hash(line);
+		auto id = compute_hash(line);
 		KNOWN_IDS[id] = line;
 	}
 	return true;
@@ -108,6 +108,20 @@ void MixFile::list_files(void)
 // ASCII characters only.
 uint32_t MixFile::compute_hash(const std::string& s)
 {
+	if (_isTLK) {
+		const char *buffer = s.c_str();
+
+		int actor_id  =   10 * (buffer[0] - '0') +
+					   (buffer[1] - '0');
+
+		int speech_id = 1000 * (buffer[3] - '0') +
+						 100 * (buffer[4] - '0') +
+						  10 * (buffer[5] - '0') +
+							   (buffer[6] - '0');
+
+		return 10000 * actor_id + speech_id;
+
+	}
 	// pad size to multiple of 4
 	int size = (s.length() + 3) & ~0x03;
 	std::vector<unsigned char> buffer(size);

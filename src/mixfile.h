@@ -106,13 +106,13 @@ private:
 	// Attempts to detect file type based by reading data from file.
 	FileType detect_file_types(const MixEntry& entry);
 	// Computes file id hash.
-	static uint32_t compute_hash(const std::string& s);
+	uint32_t compute_hash(const std::string& s);
 
 public:
 	// Loads a list of id => filename from a file.
 	static bool load_known_ids(const std::string& filename);
 	// Loads and indexes a list of filenames from a file.
-	static bool load_filenames(const std::string& filename);
+	bool load_filenames(const std::string& filename);
 
 	MixFile(const std::string& filename);
 	~MixFile(void) { }
