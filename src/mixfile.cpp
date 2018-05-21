@@ -14,8 +14,14 @@
 
 std::map<uint32_t,std::string> MixFile::KNOWN_IDS;
 
-MixFile::MixFile(const std::string& filename) : fs(filename, std::fstream::in | std::fstream::binary)
+MixFile::MixFile() {
+	_isTLK = false;
+}
+
+void MixFile::load(const std::string& filename)
 {
+	fs.open(filename, std::fstream::in | std::fstream::binary);
+
 	if (filename.find(".tlk") || filename.find(".TLK"))
 		_isTLK = true;
 	else
@@ -101,6 +107,14 @@ void MixFile::list_files(void)
 			<< std::dec << std::setw(8) << (data_offset + it.second.offset) << "\t"
 			<< std::dec << std::setw(8) << it.second.size << "\t"
 			<< std::setw(4) << t << std::endl;
+	}
+}
+
+void MixFile::extract_all_files(void)
+{
+	for (auto it : entries)
+	{
+		extract_entry(it.second);
 	}
 }
 
@@ -203,7 +217,7 @@ FileType MixFile::detect_file_types(const MixEntry& entry)
 		}
 
 		if (_isTLK)
-			return FileType::TLK;
+			return FileType::AUD;
 
 		return FileType::UNKNOWN;
 	}

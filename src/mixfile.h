@@ -77,7 +77,7 @@ enum FileType
 	DAT,
 	GAMEINFO,
 	TRE,
-	TLK
+	AUD
 };
 
 class MixFile
@@ -114,10 +114,12 @@ public:
 	// Loads and indexes a list of filenames from a file.
 	bool load_filenames(const std::string& filename);
 
-	MixFile(const std::string& filename);
+	MixFile();
 	~MixFile(void) { }
 
+	void load(const std::string& filename);
 	void list_files(void);
+	void extract_all_files(void);
 	void load_file(const std::string& name);
 	void load_file(uint32_t id);
 	void extract_file(const std::string& name);
