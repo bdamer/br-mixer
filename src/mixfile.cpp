@@ -22,7 +22,7 @@ void MixFile::load(const std::string& filename)
 {
 	fs.open(filename, std::fstream::in | std::fstream::binary);
 
-	if (filename.find(".tlk") || filename.find(".TLK"))
+	if (filename.find(".tlk") != std::string::npos || filename.find(".TLK") != std::string::npos)
 		_isTLK = true;
 	else
 		_isTLK = false;
