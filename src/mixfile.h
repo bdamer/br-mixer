@@ -24,7 +24,7 @@ struct MixEntry
 	int32_t size;			// byte length of data entry
 };
 
-struct GameInfo 
+struct GameInfo
 {
 	int32_t offset;			// Start of data + 1
 	int32_t zero;			// 00 00 00 00		=	0
@@ -71,20 +71,21 @@ struct SetItem
 enum FileType
 {
 	UNKNOWN,
-	VQA,	
+	VQA,
 	SHP,
 	SET,
 	DAT,
 	GAMEINFO,
-	TRE
+	TRE,
+	TLK
 };
 
 class MixFile
 {
 private:
-	static std::map<uint32_t,std::string> KNOWN_IDS;	
+	static std::map<uint32_t,std::string> KNOWN_IDS;
 	static const uint32_t VQA_ID = 0x4d524f46;
-	static const uint32_t SET_ID = 0x30746553;	
+	static const uint32_t SET_ID = 0x30746553;
 	static const uint32_t GAMEINFO_ID = 0x00000049;
 	static const uint32_t DAT_ID = 0x3457b6f6; // timestamp 10/29/1997 @ 10:21pm (UTC)
 
@@ -93,6 +94,8 @@ private:
 	std::map<uint32_t, MixEntry> entries;
 	// Offset of entries in MIX file
 	int data_offset;
+
+	bool _isTLK;
 
 	// Loads a MixEntry.
 	void load_entry(const MixEntry& entry);
@@ -119,6 +122,8 @@ public:
 	void load_file(uint32_t id);
 	void extract_file(const std::string& name);
 	void extract_file(uint32_t id);
+
+	bool isTLK() { return _isTLK; }
 
 	// Loads header from mix file.
 	friend std::istream& operator>>(std::istream& is, MixFile& utf);

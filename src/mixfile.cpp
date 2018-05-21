@@ -16,7 +16,12 @@ std::map<uint32_t,std::string> MixFile::KNOWN_IDS;
 
 MixFile::MixFile(const std::string& filename) : fs(filename, std::fstream::in | std::fstream::binary)
 {
-	std::cout << "Loading MIX file: " << filename << std::endl;
+	if (filename.find(".tlk") || filename.find(".TLK"))
+		_isTLK = true;
+	else
+		_isTLK = false;
+
+	std::cout << "Loading MIX file: " << filename << (_isTLK ? " which is TLK" : "") << std::endl;
 	if (!fs)
 	{
 		throw std::runtime_error("Error opening file: " + filename);
@@ -99,7 +104,7 @@ void MixFile::list_files(void)
 	}
 }
 
-// Computes a simple file hash. The hash is case-insensitive and works for 
+// Computes a simple file hash. The hash is case-insensitive and works for
 // ASCII characters only.
 uint32_t MixFile::compute_hash(const std::string& s)
 {
@@ -143,8 +148,8 @@ FileType MixFile::detect_file_types(const MixEntry& entry)
 	if ((tmp & VQA_ID) == VQA_ID)
 	{
 		return FileType::VQA;
-	}	
-	else if ((tmp & SET_ID) == SET_ID)		
+	}
+	else if ((tmp & SET_ID) == SET_ID)
 	{
 		return FileType::SET;
 	}
@@ -182,6 +187,10 @@ FileType MixFile::detect_file_types(const MixEntry& entry)
 				return FileType::VQA;
 			}
 		}
+
+		if (_isTLK)
+			return FileType::TLK;
+
 		return FileType::UNKNOWN;
 	}
 }
@@ -306,7 +315,7 @@ void MixFile::load_entry(const MixEntry& entry)
 			{
 				std::cout << "Save images to disk? (y/n) ";
 				std::cin >> c;
-			} 
+			}
 			while (c != 'Y' && c != 'y' && c != 'N' && c != 'n');
 			if (c == 'Y' || c == 'y')
 			{
@@ -344,7 +353,7 @@ void MixFile::load_entry(const MixEntry& entry)
 			{
 				extract_file(entry.id);
 			}
-		}		
+		}
 		break;
 	}
 }
@@ -401,6 +410,17 @@ std::istream& operator>>(std::istream& is, MixFile& utf)
 	{
 		is.read((char*)&entry, sizeof(MixEntry));
 		utf.entries[entry.id] = entry;
+
+		if (utf.isTLK()) {
+			int actor_id, speech_id;
+
+			actor_id = entry.id / 10000;
+			speech_id = entry.id - actor_id * 10000;
+
+			char buf[50];
+			snprintf(buf, 50, "%02d-%04d.AUD", actor_id, speech_id);
+			MixFile::KNOWN_IDS[entry.id] = buf;
+		}
 	}
 	// compute base offset once
 	utf.data_offset = sizeof(MixHeader) + utf.header.file_count * sizeof(MixEntry);
