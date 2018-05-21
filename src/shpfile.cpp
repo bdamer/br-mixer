@@ -12,7 +12,7 @@ void ShpFile::save_as_png(int idx, const std::string& filename)
 // TODO: can we write to png buffer directly?
 std::istream& operator>>(std::istream& is, ShpFile& file)
 {
-	// Blade Runner SHP is different from previous Westwood SHP files. 
+	// Blade Runner SHP is different from previous Westwood SHP files.
 	// Each file starts with the number of images:
 	is.read((char*)&file.num_images, sizeof(int32_t));
 
