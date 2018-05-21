@@ -19,6 +19,7 @@ While it is possible to list all files contained in a mix file, BR Mixer does no
 BR Mixer requires the following libraries at compile-time:
 
 * libpng (1.6.16)
+* png++
 
 ### Building BR Mixer
 
