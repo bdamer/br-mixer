@@ -10,6 +10,7 @@ clean:
 	rm -f *.o brmixer
 
 $(TARGET): brmixer.o mixfile.o shpfile.o datfile.o trefile.o vqafile.o
+	mkdir -p bin
 	$(CC) $(CFLAGS) -o $(TARGET) brmixer.o mixfile.o shpfile.o datfile.o trefile.o vqafile.o $(LDFLAGS)
 
 brmixer.o: $(SRC)brmixer.cpp

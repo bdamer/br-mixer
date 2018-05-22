@@ -14,9 +14,20 @@
 
 std::map<uint32_t,std::string> MixFile::KNOWN_IDS;
 
-MixFile::MixFile(const std::string& filename) : fs(filename, std::fstream::in | std::fstream::binary)
+MixFile::MixFile() {
+	_isTLK = false;
+}
+
+void MixFile::load(const std::string& filename)
 {
-	std::cout << "Loading MIX file: " << filename << std::endl;
+	fs.open(filename, std::fstream::in | std::fstream::binary);
+
+	if (filename.find(".tlk") != std::string::npos || filename.find(".TLK") != std::string::npos)
+		_isTLK = true;
+	else
+		_isTLK = false;
+
+	std::cout << "Loading MIX file: " << filename << (_isTLK ? " which is TLK" : "") << std::endl;
 	if (!fs)
 	{
 		throw std::runtime_error("Error opening file: " + filename);
@@ -63,7 +74,7 @@ bool MixFile::load_filenames(const std::string & filename)
 	{
 		if (line.size() == 0)
 			continue;
-		auto id = MixFile::compute_hash(line);
+		auto id = compute_hash(line);
 		KNOWN_IDS[id] = line;
 	}
 	return true;
@@ -99,10 +110,32 @@ void MixFile::list_files(void)
 	}
 }
 
-// Computes a simple file hash. The hash is case-insensitive and works for 
+void MixFile::extract_all_files(void)
+{
+	for (auto it : entries)
+	{
+		extract_entry(it.second);
+	}
+}
+
+// Computes a simple file hash. The hash is case-insensitive and works for
 // ASCII characters only.
 uint32_t MixFile::compute_hash(const std::string& s)
 {
+	if (_isTLK) {
+		const char *buffer = s.c_str();
+
+		int actor_id  =   10 * (buffer[0] - '0') +
+					   (buffer[1] - '0');
+
+		int speech_id = 1000 * (buffer[3] - '0') +
+						 100 * (buffer[4] - '0') +
+						  10 * (buffer[5] - '0') +
+							   (buffer[6] - '0');
+
+		return 10000 * actor_id + speech_id;
+
+	}
 	// pad size to multiple of 4
 	int size = (s.length() + 3) & ~0x03;
 	std::vector<unsigned char> buffer(size);
@@ -143,8 +176,8 @@ FileType MixFile::detect_file_types(const MixEntry& entry)
 	if ((tmp & VQA_ID) == VQA_ID)
 	{
 		return FileType::VQA;
-	}	
-	else if ((tmp & SET_ID) == SET_ID)		
+	}
+	else if ((tmp & SET_ID) == SET_ID)
 	{
 		return FileType::SET;
 	}
@@ -182,6 +215,10 @@ FileType MixFile::detect_file_types(const MixEntry& entry)
 				return FileType::VQA;
 			}
 		}
+
+		if (_isTLK)
+			return FileType::AUD;
+
 		return FileType::UNKNOWN;
 	}
 }
@@ -306,7 +343,7 @@ void MixFile::load_entry(const MixEntry& entry)
 			{
 				std::cout << "Save images to disk? (y/n) ";
 				std::cin >> c;
-			} 
+			}
 			while (c != 'Y' && c != 'y' && c != 'N' && c != 'n');
 			if (c == 'Y' || c == 'y')
 			{
@@ -344,7 +381,7 @@ void MixFile::load_entry(const MixEntry& entry)
 			{
 				extract_file(entry.id);
 			}
-		}		
+		}
 		break;
 	}
 }
@@ -401,6 +438,17 @@ std::istream& operator>>(std::istream& is, MixFile& utf)
 	{
 		is.read((char*)&entry, sizeof(MixEntry));
 		utf.entries[entry.id] = entry;
+
+		if (utf.isTLK()) {
+			int actor_id, speech_id;
+
+			actor_id = entry.id / 10000;
+			speech_id = entry.id - actor_id * 10000;
+
+			char buf[50];
+			snprintf(buf, 50, "%02d-%04d.AUD", actor_id, speech_id);
+			MixFile::KNOWN_IDS[entry.id] = buf;
+		}
 	}
 	// compute base offset once
 	utf.data_offset = sizeof(MixHeader) + utf.header.file_count * sizeof(MixEntry);

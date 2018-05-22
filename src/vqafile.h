@@ -14,7 +14,7 @@ struct VqhdChunk
 	uint8_t block_w;			// Width of each image block in pixels
 	uint8_t block_h;			// Height of each image block in pixels
 	uint8_t frame_rate;			// Frame rate of VQA
-	
+
 	// TODO: review
 	uint8_t   CBParts;       /* How many images use the same lookup table  */
 	uint16_t  Colors;        /* Maximum number of colors used in VQA       */
@@ -53,7 +53,7 @@ private:
 	static const uint32_t LIND = 0x444e494c;
 	static const uint32_t SN2J = 0x4a324e53;
 	static const uint32_t SND2 = 0x32444e53;
-	static const uint32_t VQFR = 0x52465156;	
+	static const uint32_t VQFR = 0x52465156;
 	static const uint32_t VQHD = 0x44485156;
 	static const uint32_t WVQA = 0x41515657;
 

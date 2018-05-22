@@ -19,6 +19,7 @@ While it is possible to list all files contained in a mix file, BR Mixer does no
 BR Mixer requires the following libraries at compile-time:
 
 * libpng (1.6.16)
+* png++
 
 ### Building BR Mixer
 
@@ -51,11 +52,11 @@ This will load up the mix file:
 	Loading known filenames from: ../data/filenames.txt
 	Loading MIX file: C:\Games\Blade Runner\STARTUP.MIX
 	Found 137 entries.
-	[S]how all files, [L]oad file entry, [E]xtract file entry, or [Q]uit:
-	
+	[S]how all files, [L]oad file entry, [E]xtract file entry, extract [A]ll files or [Q]uit:
+
 Once the file has been loaded, enter 'S' to list all entries contained in the mix file:
 
-	[S]how all files, [L]oad file entry, [E]xtract file entry, or [Q]uit: S
+	[S]how all files, [L]oad file entry, [E]xtract file entry, extract [A]ll files or [Q]uit: S
 	ID              Name            Offset          Size            Type
 	 802e5dd        GAMEINFO.DAT        1650            6626           5
 	 9413dc5        BRLOGO_E.VQA     1610018          256316           1
@@ -63,11 +64,18 @@ Once the file has been loaded, enter 'S' to list all entries contained in the mi
 
 To load an individual file, enter "L" followed by the name of the entry. For example, to show the contents of GAMEINFO.DAT, enter:
 
-	[S]how all files, [L]oad file entry, [E]xtract file entry, or [Q]uit: L
+	[S]how all files, [L]oad file entry, [E]xtract file entry, extract [A]ll files or [Q]uit: L
 	Enter the file to load: GAMEINFO.DAT
-	
+
 To extract a file to disk, enter "E" followed by the name of the entry: 
 
-	[S]how all files, [L]oad file entry, [E]xtract file entry, or [Q]uit: E
+	[S]how all files, [L]oad file entry, [E]xtract file entry, extract [A]ll files or [Q]uit: E
 	Enter the file to extract: GAMEINFO.DAT
 	Extracting file to: ../data/GAMEINFO.DAT
+
+To extract all files to disk, enter "A":
+
+	[S]how all files, [L]oad file entry, [E]xtract file entry, extract [A]ll files or [Q]uit: A
+	Extracting file to: ../data/GAMEINFO.DAT
+	Extracting file to: ../data/BRLOGO_E.VQA
+

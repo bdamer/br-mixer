@@ -71,7 +71,7 @@ void VqaFile::read_format_80(std::istream& is)
 	while (1)
 	{
 		is.read((char*)&cmd, sizeof(uint8_t));
-		
+
 		// Method 2: 0cccpppp pppppppp
 		// Copy <count> bytes from dest at current position - <pos> to current position.
 		if (~cmd & 0x80)
@@ -100,9 +100,9 @@ void VqaFile::read_format_80(std::istream& is)
 			// copy <cout> bytes from <in> to <dst>
 			auto cur = dst.size();
 			dst.resize(cur + count8);
-			is.read((char*)&dst[cur], count8 * sizeof(uint8_t)); 
+			is.read((char*)&dst[cur], count8 * sizeof(uint8_t));
 			continue;
-		} 
+		}
 
 		// Method 3: 11cccccc pppppppp
 		// Copy <count> bytes from dest at current position - <pos> to current position
@@ -222,7 +222,7 @@ std::istream& operator>>(std::istream& is, VqaFile& file)
 			// followed by chunks
 			break;
 
-		// Code book, full, compressed 
+		// Code book, full, compressed
 		case VqaFile::CBFZ:
 			std::cout << "CBFZ (" << ch.size << ")" << std::endl;
 			file.read_codebook(is);
